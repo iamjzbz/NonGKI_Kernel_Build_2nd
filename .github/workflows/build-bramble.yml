@@ -188,6 +188,11 @@ jobs:
 
           echo "===== build.config.redbull.no-cfi ====="
           grep POST_DEFCONFIG_CMDS build.config.redbull.no-cfi
+
+      - name: Disable Werror
+        working-directory: kernel/private/msm-google
+        run: |
+          echo "# CONFIG_CC_WERROR is not set" >> arch/arm64/configs/redbull_defconfig
           
       - name: Build kernel Image only
         working-directory: kernel
