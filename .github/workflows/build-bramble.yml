@@ -54,12 +54,15 @@ jobs:
           chmod +x ksu-cocci/classic-hooks/apply.sh
           bash ksu-cocci/classic-hooks/apply.sh .
           
-      - name: Enable KernelSU config
+      - name: Enable KernelSU manual hook config
         working-directory: kernel/private/msm-google
         run: |
-          echo "CONFIG_KSU=y" >> arch/arm64/configs/redbull_defconfig
-          echo "CONFIG_KSU_MANUAL_HOOK=y" >> arch/arm64/configs/redbull_defconfig
-          echo "# CONFIG_KSU_KPROBE_HOOKS is not set" >> arch/arm64/configs/redbull_defconfig
+          cat >> arch/arm64/configs/redbull_defconfig <<'EOF'
+          CONFIG_KSU=y
+          # CONFIG_KSU_KPROBES_HOOK is not set
+          # CONFIG_KSU_HOOK_KPROBES is not set
+          # CONFIG_KSU_WITH_KPROBES is not set
+          EOF
 
       - name: Build kernel Image only
         working-directory: kernel
