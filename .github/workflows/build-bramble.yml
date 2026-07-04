@@ -40,19 +40,14 @@ jobs:
         run: |
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
           
-      - name: Apply KernelSU classic hooks with Coccinelle
+      - name: Apply WildKernels minimal manual hooks
         working-directory: kernel/private/msm-google
         run: |
-          sudo apt-get update
-          sudo apt-get install -y coccinelle
+          curl -L \
+            https://raw.githubusercontent.com/WildKernels/kernel_patches/aaaf89639daedac270b7e17e4200d664ca4ef525/next/scope_min_manual_hooks_v1.6.patch \
+            -o scope_min_manual_hooks_v1.6.patch
 
-          git clone https://github.com/devnoname120/kernelsu-coccinelle ksu-cocci
-          cd ksu-cocci
-          git checkout 9e30076418813fc7eaab6481da2e745dfde56249
-          cd ..
-
-          chmod +x ksu-cocci/classic-hooks/apply.sh
-          bash ksu-cocci/classic-hooks/apply.sh .
+          git apply --reject --whitespace=fix scope_min_manual_hooks_v1.6.patch
           
       - name: Enable KernelSU manual hook config
         working-directory: kernel/private/msm-google
