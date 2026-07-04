@@ -207,6 +207,18 @@ jobs:
         run: |
           echo "# CONFIG_CC_WERROR is not set" >> arch/arm64/configs/redbull_defconfig
           
+      - name: Check LLVM toolchain
+        working-directory: kernel
+        run: |
+          echo "PATH=$PATH"
+
+          which clang || true
+          which ld.lld || true
+          which llvm-objdump || true
+
+          find . -name ld.lld
+          find . -name llvm-objdump   
+          
       - name: Build kernel Image only
         working-directory: kernel
         run: |
