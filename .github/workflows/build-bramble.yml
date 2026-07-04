@@ -47,7 +47,14 @@ jobs:
             -b master-kernel-build-2021 \
             https://android.googlesource.com/kernel/build \
             kernel/build
-
+            
+      - name: Clone Android Clang prebuilts
+        run: |
+          mkdir -p kernel/prebuilts-master/clang/host
+          git clone --depth=1 \
+            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
+            kernel/prebuilts-master/clang/host/linux-x86
+            
       - name: Clone Google build-tools prebuilts
         run: |
           mkdir -p kernel/prebuilts
