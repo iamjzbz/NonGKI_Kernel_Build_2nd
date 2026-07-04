@@ -12,10 +12,23 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            bc bison build-essential curl flex git \
+            bc \
+            bison \
+            build-essential \
+            curl \
+            flex \
+            git \
             gcc-arm-linux-gnueabi \
-            libncurses5-dev libssl-dev lz4 \
-            python3 python-is-python3 unzip zip
+            gcc-aarch64-linux-gnu \
+            binutils-arm-linux-gnueabi \
+            binutils-aarch64-linux-gnu \
+            libncurses5-dev \
+            libssl-dev \
+            lz4 \
+            python3 \
+            python-is-python3 \
+            unzip \
+            zip     
 
       - name: Create Google kernel layout
         run: |
@@ -198,7 +211,11 @@ jobs:
         working-directory: kernel
         run: |
           chmod +x build/build.sh
-          CONFIG_KSU=y CONFIG_KSU_MANUAL_HOOK=y \
+
+          CONFIG_KSU=y \
+          CONFIG_KSU_MANUAL_HOOK=y \
+          CROSS_COMPILE=aarch64-linux-gnu- \
+          CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
           BUILD_CONFIG=private/msm-google/build.config.redbull.no-cfi \
           build/build.sh
 
