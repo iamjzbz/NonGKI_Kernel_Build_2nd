@@ -39,124 +39,17 @@ jobs:
         working-directory: kernel/private/msm-google
         run: |
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
-
-      - name: Add KernelSU manual hooks
+          
+      - name: Apply KernelSU syscall hook script
         working-directory: kernel/private/msm-google
         run: |
-          python3 <<'PY'
-          from pathlib import Path
+          curl -L \
+            https://raw.githubusercontent.com/JackA1ltman/NonGKI_Kernel_Build_2nd/af683a9a204824ab5db52565ae15700af435f08e/Patches/syscall_hook_patches.sh \
+            -o syscall_hook_patches.sh
 
-          def replace(path, old, new):
-              p = Path(path)
-              s = p.read_text()
-              if new in s:
-                  return
-              if old not in s:
-                  raise SystemExit(f"Pattern not found in {path}")
-              p.write_text(s.replace(old, new, 1))
-
-          replace("fs/exec.c",
-          """static int do_execveat_common(int fd, struct filename *filename,
-          			      struct user_arg_ptr argv,
-          			      struct user_arg_ptr envp,
-          			      int flags)
-          {
-          	return __do_execve_file(fd, filename, argv, envp, flags, NULL);
-          }""",
-          """#ifdef CONFIG_KSU
-          __attribute__((hot))
-          extern int ksu_handle_execveat(int *fd, struct filename **filename_ptr,
-          				void *argv, void *envp, int *flags);
-          #endif
-
-          static int do_execveat_common(int fd, struct filename *filename,
-          			      struct user_arg_ptr argv,
-          			      struct user_arg_ptr envp,
-          			      int flags)
-          {
-          #ifdef CONFIG_KSU
-          	ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
-          #endif
-          	return __do_execve_file(fd, filename, argv, envp, flags, NULL);
-          }""")
-
-          replace("fs/open.c",
-          """long do_faccessat(int dfd, const char __user *filename, int mode)
-          {
-          	const struct cred *old_cred;""",
-          """#ifdef CONFIG_KSU
-          __attribute__((hot))
-          extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
-          				int *mode, int *flags);
-          #endif
-
-          long do_faccessat(int dfd, const char __user *filename, int mode)
-          {
-          #ifdef CONFIG_KSU
-          	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
-          #endif
-          	const struct cred *old_cred;""")
-
-          replace("fs/read_write.c",
-          """ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
-          {
-          	struct fd f = fdget_pos(fd);
-          	ssize_t ret = -EBADF;""",
-          """#ifdef CONFIG_KSU
-          extern bool ksu_vfs_read_hook __read_mostly;
-          extern __attribute__((cold)) int ksu_handle_sys_read(unsigned int fd,
-          				char __user **buf_ptr, size_t *count_ptr);
-          #endif
-
-          ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
-          {
-          	struct fd f = fdget_pos(fd);
-          	ssize_t ret = -EBADF;
-          #ifdef CONFIG_KSU
-          	if (unlikely(ksu_vfs_read_hook))
-          		ksu_handle_sys_read(fd, &buf, &count);
-          #endif""")
-
-          replace("fs/stat.c",
-          """SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
-          		struct stat __user *, statbuf, int, flag)
-          {
-          	struct kstat stat;
-          	int error;""",
-          """#ifdef CONFIG_KSU
-          __attribute__((hot))
-          extern int ksu_handle_stat(int *dfd, const char __user **filename_user,
-          				int *flags);
-          #endif
-
-          SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
-          		struct stat __user *, statbuf, int, flag)
-          {
-          	struct kstat stat;
-          	int error;
-          #ifdef CONFIG_KSU
-          	ksu_handle_stat(&dfd, &filename, &flag);
-          #endif""")
-
-          replace("kernel/reboot.c",
-          """SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
-          		void __user *, arg)
-          {
-          	struct pid_namespace *pid_ns = task_active_pid_ns(current);""",
-          """#ifdef CONFIG_KSU
-          extern int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd,
-          				void __user **arg);
-          #endif
-
-          SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
-          		void __user *, arg)
-          {
-          #ifdef CONFIG_KSU
-          	ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
-          #endif
-          	struct pid_namespace *pid_ns = task_active_pid_ns(current);""")
-          PY
-
+          chmod +x syscall_hook_patches.sh
+          bash syscall_hook_patches.sh
+          
       - name: Enable KernelSU config
         working-directory: kernel/private/msm-google
         run: |
