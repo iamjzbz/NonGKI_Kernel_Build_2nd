@@ -59,6 +59,7 @@ jobs:
         run: |
           cat >> arch/arm64/configs/redbull_defconfig <<'EOF'
           CONFIG_KSU=y
+          CONFIG_KSU_MANUAL_HOOK=y
           # CONFIG_KSU_KPROBES_HOOK is not set
           # CONFIG_KSU_HOOK_KPROBES is not set
           # CONFIG_KSU_WITH_KPROBES is not set
