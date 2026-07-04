@@ -165,11 +165,19 @@ jobs:
           echo "===== Hook check grep ====="
           grep -R "No hooks were defined\|KSU_MANUAL\|KPROBES\|ksu_handle_execveat" -n drivers/kernelsu fs/exec.c fs/open.c fs/read_write.c fs/stat.c kernel/reboot.c drivers/input/input.c || true
 
+      - name: Verify manual hook marker
+        working-directory: kernel/private/msm-google
+        run: |
+          grep -n "ksu_handle_sys_reboot" kernel/reboot.c
+          grep -n "CONFIG_KSU_MANUAL_HOOK" arch/arm64/configs/redbull_defconfig
+
       - name: Build kernel Image only
         working-directory: kernel
         run: |
           chmod +x build/build.sh
-          BUILD_CONFIG=private/msm-google/build.config.redbull.no-cfi build/build.sh
+          CONFIG_KSU=y CONFIG_KSU_MANUAL_HOOK=y \
+          BUILD_CONFIG=private/msm-google/build.config.redbull.no-cfi \
+          build/build.sh
 
       - name: Show outputs
         run: |
