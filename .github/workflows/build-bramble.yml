@@ -35,6 +35,14 @@ jobs:
             https://android.googlesource.com/kernel/build \
             kernel/build
 
+      - name: Clone Google build-tools prebuilts
+        run: |
+          mkdir -p kernel/prebuilts
+          git clone --depth=1 \
+            -b android11-qpr3-release \
+            https://android.googlesource.com/platform/prebuilts/build-tools \
+            kernel/prebuilts/build-tools
+
       - name: Add KernelSU-Next legacy
         working-directory: kernel/private/msm-google
         run: |
