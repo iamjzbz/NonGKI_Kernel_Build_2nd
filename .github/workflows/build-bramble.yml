@@ -118,10 +118,25 @@ jobs:
           cat >> arch/arm64/configs/redbull_defconfig <<'EOF'
           CONFIG_KSU=y
           CONFIG_KSU_MANUAL_HOOK=y
+          # CONFIG_KPROBES is not set
+          # CONFIG_KPROBE_EVENTS is not set
+          # CONFIG_KSU_KPROBE_HOOKS is not set
           # CONFIG_KSU_KPROBES_HOOK is not set
           # CONFIG_KSU_HOOK_KPROBES is not set
           # CONFIG_KSU_WITH_KPROBES is not set
           EOF
+
+      - name: Inspect KernelSU Kbuild
+        working-directory: kernel/private/msm-google
+        run: |
+          echo "===== Kbuild line 120-160 ====="
+          nl -ba drivers/kernelsu/Kbuild | sed -n '120,160p'
+
+          echo "===== Kconfig hook options ====="
+          grep -n "KPROBE\|HOOK\|MANUAL" drivers/kernelsu/Kconfig || true
+
+          echo "===== Hook check grep ====="
+          grep -R "No hooks were defined\|KSU_MANUAL\|KPROBES\|ksu_handle_execveat" -n drivers/kernelsu fs/exec.c fs/open.c fs/read_write.c fs/stat.c kernel/reboot.c drivers/input/input.c || true
 
       - name: Build kernel Image only
         working-directory: kernel
