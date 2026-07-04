@@ -40,14 +40,77 @@ jobs:
         run: |
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
           
-      - name: Apply WildKernels minimal manual hooks
+      - name: Apply WildKernels manual hooks plus redbull fixes
         working-directory: kernel/private/msm-google
         run: |
           curl -L \
             https://raw.githubusercontent.com/WildKernels/kernel_patches/aaaf89639daedac270b7e17e4200d664ca4ef525/next/scope_min_manual_hooks_v1.6.patch \
             -o scope_min_manual_hooks_v1.6.patch
 
-          git apply --reject --whitespace=fix scope_min_manual_hooks_v1.6.patch
+          git apply --reject --whitespace=fix scope_min_manual_hooks_v1.6.patch || true
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              s = p.read_text()
+              if new in s:
+                  print(f"{path}: already patched")
+                  return
+              if old not in s:
+                  raise SystemExit(f"Pattern not found in {path}")
+              p.write_text(s.replace(old, new, 1))
+              print(f"{path}: patched")
+
+          replace("fs/exec.c",
+          """static int do_execveat_common(int fd, struct filename *filename,
+          			      struct user_arg_ptr argv,
+          			      struct user_arg_ptr envp,
+          			      int flags)
+          {
+          	return __do_execve_file(fd, filename, argv, envp, flags, NULL);
+          }""",
+          """#ifdef CONFIG_KSU
+          extern bool ksu_execveat_hook __read_mostly;
+          extern int ksu_handle_execveat(int *fd, struct filename **filename_ptr,
+          				void *argv, void *envp, int *flags);
+          extern int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
+          				void *argv, void *envp, int *flags);
+          #endif
+
+          static int do_execveat_common(int fd, struct filename *filename,
+          			      struct user_arg_ptr argv,
+          			      struct user_arg_ptr envp,
+          			      int flags)
+          {
+          #ifdef CONFIG_KSU
+          	if (unlikely(ksu_execveat_hook))
+          		ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
+          	else
+          		ksu_handle_execveat_sucompat(&fd, &filename, &argv, &envp, &flags);
+          #endif
+          	return __do_execve_file(fd, filename, argv, envp, flags, NULL);
+          }""")
+
+          replace("fs/open.c",
+          """long do_faccessat(int dfd, const char __user *filename, int mode)
+          {
+          	const struct cred *old_cred;""",
+          """#ifdef CONFIG_KSU
+          extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
+          				int *mode, int *flags);
+          #endif
+
+          long do_faccessat(int dfd, const char __user *filename, int mode)
+          {
+          #ifdef CONFIG_KSU
+          	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
+          #endif
+          	const struct cred *old_cred;""")
+          PY
+
+          git diff -- fs/exec.c fs/open.c fs/read_write.c fs/stat.c kernel/reboot.c drivers/input/input.c
           
       - name: Enable KernelSU manual hook config
         working-directory: kernel/private/msm-google
