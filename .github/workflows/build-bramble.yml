@@ -1,4 +1,4 @@
-name: Build Pixel 4a 5G Bramble Kernel
+name: Build Pixel 4a 5G Kernel
 
 on:
   workflow_dispatch:
@@ -26,12 +26,16 @@ jobs:
             unzip \
             zip
 
-      - name: Clone kernel source
+      - name: Create Google kernel layout
+        run: |
+          mkdir -p kernel/private
+
+      - name: Clone redbull kernel source
         run: |
           git clone --depth=1 \
             -b android-msm-redbull-4.19-android11-qpr3 \
             https://android.googlesource.com/kernel/msm \
-            kernel
+            kernel/private/msm-google
 
       - name: Clone Google kernel build scripts
         run: |
@@ -40,18 +44,34 @@ jobs:
             https://android.googlesource.com/kernel/build \
             kernel/build
 
-      - name: Build redbull kernel
+      - name: Add KernelSU-Next legacy
+        working-directory: kernel/private/msm-google
+        run: |
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
+
+      - name: Build kernel Image only
         working-directory: kernel
         run: |
-          chmod +x build_redbull.sh
           chmod +x build/build.sh
-          ./build_redbull.sh
+          BUILD_CONFIG=private/msm-google/build.config.redbull.no-cfi build/build.sh
 
-      - name: Upload output
+      - name: Show outputs
+        run: |
+          find kernel -type f \( \
+            -name "Image" -o \
+            -name "Image.gz" -o \
+            -name "Image.lz4" -o \
+            -name "Image.lz4-dtb" -o \
+            -name "dtbo.img" \
+          \) -print
+
+      - name: Upload kernel artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: bramble-redbull-kernel
+          name: Pixel4a5G-bramble-kernel
           path: |
-            kernel/out/**
-            kernel/dist/**
-            kernel/arch/arm64/boot/**
+            kernel/out/**/Image
+            kernel/out/**/Image.gz
+            kernel/out/**/Image.lz4
+            kernel/out/**/Image.lz4-dtb
+            kernel/out/**/dtbo.img
