@@ -111,6 +111,40 @@ jobs:
           PY
 
           git diff -- fs/exec.c fs/open.c fs/read_write.c fs/stat.c kernel/reboot.c drivers/input/input.c
+
+      - name: Force KernelSU reboot hook marker
+        working-directory: kernel/private/msm-google
+        run: |
+          grep -q "ksu_handle_sys_reboot" kernel/reboot.c || python3 <<'PY'
+          from pathlib import Path
+
+          p = Path("kernel/reboot.c")
+          s = p.read_text()
+
+          old = """SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+          		void __user *, arg)
+          {
+          	struct pid_namespace *pid_ns = task_active_pid_ns(current);"""
+
+          new = """#ifdef CONFIG_KSU
+          extern int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd,
+          				void __user **arg);
+          #endif
+
+          SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+          		void __user *, arg)
+          {
+          #ifdef CONFIG_KSU
+          	ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
+          #endif
+          	struct pid_namespace *pid_ns = task_active_pid_ns(current);"""
+
+          if old not in s:
+              raise SystemExit("reboot hook pattern not found")
+          p.write_text(s.replace(old, new, 1))
+          PY
+
+          grep -n "ksu_handle_sys_reboot" kernel/reboot.c
           
       - name: Enable KernelSU manual hook config
         working-directory: kernel/private/msm-google
