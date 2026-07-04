@@ -40,15 +40,19 @@ jobs:
         run: |
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
           
-      - name: Apply KernelSU syscall hook script
+      - name: Apply KernelSU classic hooks with Coccinelle
         working-directory: kernel/private/msm-google
         run: |
-          curl -L \
-            https://raw.githubusercontent.com/JackA1ltman/NonGKI_Kernel_Build_2nd/af683a9a204824ab5db52565ae15700af435f08e/Patches/syscall_hook_patches.sh \
-            -o syscall_hook_patches.sh
+          sudo apt-get update
+          sudo apt-get install -y coccinelle
 
-          chmod +x syscall_hook_patches.sh
-          bash syscall_hook_patches.sh
+          git clone https://github.com/devnoname120/kernelsu-coccinelle ksu-cocci
+          cd ksu-cocci
+          git checkout 9e30076418813fc7eaab6481da2e745dfde56249
+          cd ..
+
+          chmod +x ksu-cocci/classic-hooks/apply.sh
+          bash ksu-cocci/classic-hooks/apply.sh .
           
       - name: Enable KernelSU config
         working-directory: kernel/private/msm-google
