@@ -90,7 +90,10 @@ env:
   BUILD_OTHER_CONFIG: "false"
   MERGE_CONFIG_FILES: ""
 
-  FREE_MORE_SPACE: "false"
+  FREE_MORE_SPACE: "true"
+  
+  # Parallel jobs - reduce to prevent IO pipe errors
+  MAKE_FLAGS: "-j4"
 
 jobs:
   build-kernel:
