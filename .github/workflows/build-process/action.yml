@@ -43,7 +43,12 @@ runs:
           fi
 
           if [ -n "${{ env.CLANG_SOURCE }}" ]; then
-            export PATH=$GITHUB_WORKSPACE/clang-custom/bin:$PATH
+            CLANG_BIN=$(find "$GITHUB_WORKSPACE/clang-custom" -type f -name clang -path "*/bin/clang" | head -n 1 | xargs dirname)
+            export PATH="$CLANG_BIN:$PATH"
+            echo "Using CLANG_BIN=$CLANG_BIN"
+            which clang
+            which ld.lld
+            which llvm-objdump
           fi
 
           if [[ "$BUILD_CLANG" == "true" ]]; then

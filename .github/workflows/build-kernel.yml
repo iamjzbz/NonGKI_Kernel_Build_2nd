@@ -10,7 +10,7 @@ env:
   DEVICE_CODENAME : "bramble"
 
   CUSTOM_CMDS : "CLANG_TRIPLE=aarch64-linux-gnu-"
-  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1"
+  EXTRA_CMDS : "LD=ld.lld LLVM=1 LLVM_IAS=1"
 
   # Google stock Pixel 4a 5G / Pixel 5 redbull kernel
   KERNEL_SOURCE : "https://android.googlesource.com/kernel/msm.git"
