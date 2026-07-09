@@ -86,14 +86,17 @@ env:
 
   BUILD_DEBUGGER: "true"
   SKIP_PATCH: "false"
+  
+  # Reduce memory footprint
+  CFLAGS: "-O2 -fno-lto"
 
   BUILD_OTHER_CONFIG: "true"
-  MERGE_CONFIG_FILES: "CONFIG_VD6281=n"
+  MERGE_CONFIG_FILES: "CONFIG_VD6281=n,CONFIG_LTO=n,CONFIG_LTO_CLANG=n"
 
   FREE_MORE_SPACE: "true"
   
-  # Parallel jobs - reduce to prevent IO pipe errors
-  MAKE_FLAGS: "-j4"
+  # Parallel jobs - reduce to -j2 to prevent IO pipe errors on GitHub Actions
+  MAKE_FLAGS: "-j2"
 
 jobs:
   build-kernel:
@@ -103,6 +106,10 @@ jobs:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
+      # Reduce memory usage during parallel compilation
+      RLIMIT_NOFILE: "4096"
+      NINJA_STATUS: "[%f/%t] "
+      LDFLAGS: "-Wl,--reduce-memory-overheads"
 
     steps:
       - name: ⏰ Checkout repository
