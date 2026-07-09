@@ -134,6 +134,16 @@ jobs:
           # Stock redbull Android 11 uses build.config.redbull.no-cfi.
           # If your workflow supports CUSTOM_CMDS only, leave this as a note.
           echo "Pixel 4a 5G bramble stock A11 redbull kernel"
+          
+          # Remove vd6281 driver to prevent compilation issues with missing camera headers
+          if [ -d "drivers/input/misc/vd6281" ]; then
+            echo "[+] Removing vd6281 driver..."
+            rm -rf drivers/input/misc/vd6281
+            # Update Makefile to remove vd6281 reference
+            sed -i '/vd6281/d' drivers/input/misc/Makefile
+            sed -i '/vd6281/d' drivers/input/misc/Kconfig
+            echo "[+] vd6281 driver removed."
+          fi
 
       - name: 🧰 Patch Kernel of Re:Kernel
         uses: ./.github/workflows/patch-rekernel
