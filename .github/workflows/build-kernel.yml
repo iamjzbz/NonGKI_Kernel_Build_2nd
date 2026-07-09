@@ -87,8 +87,8 @@ env:
   BUILD_DEBUGGER: "true"
   SKIP_PATCH: "false"
 
-  BUILD_OTHER_CONFIG: "false"
-  MERGE_CONFIG_FILES: ""
+  BUILD_OTHER_CONFIG: "true"
+  MERGE_CONFIG_FILES: "CONFIG_VD6281=n"
 
   FREE_MORE_SPACE: "true"
   
